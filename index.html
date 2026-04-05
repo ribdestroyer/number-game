@@ -12,16 +12,23 @@
             background: #f7f7fb;
         }
 
+        /* ▼ 入力欄とボタンを横並びにする */
+        .inputRow {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* すき間 */
+            margin-bottom: 10px;
+        }
+
         #guess {
             font-size: 1.2rem;
             width: 120px;
             padding: 8px;
         }
 
-        #submit {
-            font-size: 1.2rem;
+        #dummyBtn {
             padding: 8px 16px;
-            margin-left: 10px;
+            font-size: 1rem;
         }
 
         .history {
@@ -52,19 +59,31 @@
         .msg.err {
             color: #d32f2f;
         }
+
+        #resultLog {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 
 <body>
 
-    <div>
-        <input id="guess" type="text" maxlength="3" inputmode="numeric" autocomplete="off" placeholder="">
-        <button id="submit">決定</button>
+    <!-- ▼ 入力欄とボタンを横並びに -->
+    <div class="inputRow">
+        <input id="guess" type="text" maxlength="3" inputmode="numeric" autocomplete="off">
+        <button id="dummyBtn">決定</button>
     </div>
 
     <div class="msg" id="message"></div>
 
     <div class="history" id="history"></div>
+
+    <div id="resultLog"><b>【結果ログ】</b></div>
 
     <script>
         // ========= 乱数生成 =========
@@ -91,11 +110,12 @@
         const guessEl = document.getElementById("guess");
         const historyEl = document.getElementById("history");
         const messageEl = document.getElementById("message");
-        const submitEl = document.getElementById("submit");
+        const resultLogEl = document.getElementById("resultLog");
 
         // ========= 状態 =========
         let answer = "";
         let attempts = 0;
+        let startTime = 0;
 
         // ========= 履歴追加 =========
         function appendHistory(text) {
@@ -106,7 +126,14 @@
             historyEl.scrollTop = historyEl.scrollHeight;
         }
 
-        // ========= ゲーム開始 =========
+        // ========= 結果ログ追加 =========
+        function appendResultLog(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            resultLogEl.appendChild(div);
+        }
+
+        // ========= 訓練開始 =========
         function startGame() {
             answer = createAnswer();
             attempts = 0;
@@ -114,43 +141,51 @@
             messageEl.textContent = "";
             guessEl.value = "";
             guessEl.focus();
+
+            startTime = Date.now();
         }
 
-        // ========= 判定処理 =========
-        function handleGuess() {
-            const v = guessEl.value.trim();
-            if (!/^[1-9]{3}$/.test(v) || new Set(v).size !== 3) {
-                messageEl.textContent = "1〜9 の3桁（重複なし）";
-                messageEl.className = "msg err";
-                return;
-            }
+function handleGuess() {
+    const v = guessEl.value.trim();
+    if (!/^[1-9]{3}$/.test(v) || new Set(v).size !== 3) {
+        messageEl.textContent = "1〜9 の3桁（重複なし）";
+        messageEl.className = "msg err";
+        return;
+    }
 
-            attempts++;
-            const { S, B } = judge(answer, v);
+    attempts++;
+    const { S, B } = judge(answer, v);
 
-            appendHistory(`${attempts}  ${v}  S${S}  B${B}`);
+    appendHistory(`${attempts}  ${v}  S${S}  B${B}`);
 
-            if (S === 3) {
-                messageEl.textContent = "";
-                messageEl.className = "msg ok";
+    if (S === 3) {
+        messageEl.textContent = ``;
+        messageEl.className = "msg ok";
 
-                setTimeout(() => {
-                    alert("correct! " + attempts + "回");
-                    startGame();
-                }, 0);
-            } else {
-                messageEl.textContent = "";
-                messageEl.className = "msg";
-                guessEl.value = "";
-            }
-        }
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
-        // ========= イベント =========
-        submitEl.addEventListener("click", handleGuess);
+        appendResultLog(`正解：${attempts}回 / ${elapsed}秒`);
 
+        setTimeout(() => {
+            alert("correct! " + attempts + "回");
+            startGame();
+        }, 0);
+    } else {
+        messageEl.textContent = ``;
+        messageEl.className = "msg";
+        guessEl.value = "";
+    }
+}
+
+
+        // ========= 入力判定（Enter） =========
         guessEl.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") handleGuess();
+            if (e.key !== "Enter") return;
+	handleGuess();
         });
+
+// ========= ボタンが押された時 =========
+document.getElementById("dummyBtn").addEventListener("click", handleGuess);
 
         window.addEventListener("DOMContentLoaded", startGame);
     </script>
