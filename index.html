@@ -18,6 +18,12 @@
             padding: 8px;
         }
 
+        #submit {
+            font-size: 1.2rem;
+            padding: 8px 16px;
+            margin-left: 10px;
+        }
+
         .history {
             background: #0b1222;
             color: #e5e9f5;
@@ -46,31 +52,19 @@
         .msg.err {
             color: #d32f2f;
         }
-
-        /* ▼ 追加：結果ログ表示用 */
-        #resultLog {
-            margin-top: 20px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 0.9rem;
-        }
     </style>
 </head>
 
 <body>
 
     <div>
-        <input id="guess" type="text" maxlength="3" inputmode="numeric" autocomplete="off">
+        <input id="guess" type="text" maxlength="3" inputmode="numeric" autocomplete="off" placeholder="">
+        <button id="submit">決定</button>
     </div>
 
     <div class="msg" id="message"></div>
 
     <div class="history" id="history"></div>
-
-    <!-- ▼ 追加：結果ログ -->
-    <div id="resultLog"><b>【結果ログ】</b></div>
 
     <script>
         // ========= 乱数生成 =========
@@ -97,12 +91,11 @@
         const guessEl = document.getElementById("guess");
         const historyEl = document.getElementById("history");
         const messageEl = document.getElementById("message");
-        const resultLogEl = document.getElementById("resultLog");
+        const submitEl = document.getElementById("submit");
 
         // ========= 状態 =========
         let answer = "";
         let attempts = 0;
-        let startTime = 0;   // ▼ 追加：開始時間
 
         // ========= 履歴追加 =========
         function appendHistory(text) {
@@ -113,14 +106,7 @@
             historyEl.scrollTop = historyEl.scrollHeight;
         }
 
-        // ========= 結果ログ追加 =========
-        function appendResultLog(text) {
-            const div = document.createElement("div");
-            div.textContent = text;
-            resultLogEl.appendChild(div);
-        }
-
-        // ========= 訓練開始 =========
+        // ========= ゲーム開始 =========
         function startGame() {
             answer = createAnswer();
             attempts = 0;
@@ -128,14 +114,10 @@
             messageEl.textContent = "";
             guessEl.value = "";
             guessEl.focus();
-
-            startTime = Date.now();   // ▼ 追加：開始時刻記録
         }
 
-        // ========= 入力判定（Enter） =========
-        guessEl.addEventListener("keydown", (e) => {
-            if (e.key !== "Enter") return;
-
+        // ========= 判定処理 =========
+        function handleGuess() {
             const v = guessEl.value.trim();
             if (!/^[1-9]{3}$/.test(v) || new Set(v).size !== 3) {
                 messageEl.textContent = "1〜9 の3桁（重複なし）";
@@ -149,26 +131,27 @@
             appendHistory(`${attempts}  ${v}  S${S}  B${B}`);
 
             if (S === 3) {
-                messageEl.textContent = ``;
+                messageEl.textContent = "";
                 messageEl.className = "msg ok";
-
-                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1); // ▼ 経過秒数
-
-                // ▼ 結果ログに追加
-                appendResultLog(`正解：${attempts}回 / ${elapsed}秒`);
 
                 setTimeout(() => {
                     alert("correct! " + attempts + "回");
                     startGame();
                 }, 0);
             } else {
-                messageEl.textContent = ``;
+                messageEl.textContent = "";
                 messageEl.className = "msg";
                 guessEl.value = "";
             }
+        }
+
+        // ========= イベント =========
+        submitEl.addEventListener("click", handleGuess);
+
+        guessEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") handleGuess();
         });
 
-        // 起動と同時に開始
         window.addEventListener("DOMContentLoaded", startGame);
     </script>
 
