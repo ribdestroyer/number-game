@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SB Simple</title>
+
+    <style>
+        body {
+            font-family: system-ui;
+            padding: 20px;
+            background: #f7f7fb;
+        }
+
+        #guess {
+            font-size: 1.2rem;
+            width: 120px;
+            padding: 8px;
+        }
+
+        .history {
+            background: #0b1222;
+            color: #e5e9f5;
+            border-radius: 10px;
+            padding: 12px;
+            font-family: var(--mono);
+            max-height: 320px;
+            overflow: auto;
+            white-space: pre;
+            tab-size: 4;
+        }
+
+        .line {
+            display: block;
+        }
+
+        .msg {
+            margin: 8px 0;
+            font-weight: bold;
+        }
+
+        .msg.ok {
+            color: #2e7d32;
+        }
+
+        .msg.err {
+            color: #d32f2f;
+        }
+
+        /* ▼ 追加：結果ログ表示用 */
+        #resultLog {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div>
+        <input id="guess" type="text" maxlength="3" inputmode="numeric" autocomplete="off">
+    </div>
+
+    <div class="msg" id="message"></div>
+
+    <div class="history" id="history"></div>
+
+    <!-- ▼ 追加：結果ログ -->
+    <div id="resultLog"><b>【結果ログ】</b></div>
+
+    <script>
+        // ========= 乱数生成 =========
+        function createAnswer() {
+            const d = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            for (let i = d.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [d[i], d[j]] = [d[j], d[i]];
+            }
+            return d.slice(0, 3).join("");
+        }
+
+        // ========= 判定 =========
+        function judge(answer, guess) {
+            let S = 0, B = 0;
+            for (let i = 0; i < 3; i++) {
+                if (guess[i] === answer[i]) S++;
+                else if (answer.includes(guess[i])) B++;
+            }
+            return { S, B };
+        }
+
+        // ========= DOM =========
+        const guessEl = document.getElementById("guess");
+        const historyEl = document.getElementById("history");
+        const messageEl = document.getElementById("message");
+        const resultLogEl = document.getElementById("resultLog");
+
+        // ========= 状態 =========
+        let answer = "";
+        let attempts = 0;
+        let startTime = 0;   // ▼ 追加：開始時間
+
+        // ========= 履歴追加 =========
+        function appendHistory(text) {
+            const line = document.createElement("div");
+            line.className = "line";
+            line.textContent = text;
+            historyEl.appendChild(line);
+            historyEl.scrollTop = historyEl.scrollHeight;
+        }
+
+        // ========= 結果ログ追加 =========
+        function appendResultLog(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            resultLogEl.appendChild(div);
+        }
+
+        // ========= 訓練開始 =========
+        function startGame() {
+            answer = createAnswer();
+            attempts = 0;
+            historyEl.innerHTML = "";
+            messageEl.textContent = "";
+            guessEl.value = "";
+            guessEl.focus();
+
+            startTime = Date.now();   // ▼ 追加：開始時刻記録
+        }
+
+        // ========= 入力判定（Enter） =========
+        guessEl.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter") return;
+
+            const v = guessEl.value.trim();
+            if (!/^[1-9]{3}$/.test(v) || new Set(v).size !== 3) {
+                messageEl.textContent = "1〜9 の3桁（重複なし）";
+                messageEl.className = "msg err";
+                return;
+            }
+
+            attempts++;
+            const { S, B } = judge(answer, v);
+
+            appendHistory(`${attempts}  ${v}  S${S}  B${B}`);
+
+            if (S === 3) {
+                messageEl.textContent = ``;
+                messageEl.className = "msg ok";
+
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1); // ▼ 経過秒数
+
+                // ▼ 結果ログに追加
+                appendResultLog(`正解：${attempts}回 / ${elapsed}秒`);
+
+                setTimeout(() => {
+                    alert("correct! " + attempts + "回");
+                    startGame();
+                }, 0);
+            } else {
+                messageEl.textContent = ``;
+                messageEl.className = "msg";
+                guessEl.value = "";
+            }
+        });
+
+        // 起動と同時に開始
+        window.addEventListener("DOMContentLoaded", startGame);
+    </script>
+
+</body>
+</html>
